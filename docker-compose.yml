@@ -1,0 +1,18 @@
+services:
+  backend:
+    # TODO: Add backend build context in the next prompt.
+    # TODO: Add backend ports in the next prompt.
+    labels:
+      com.dockauri.placeholder: "backend"
+    volumes:
+      - dockauri_data:/data
+
+  frontend:
+    # TODO: Add frontend build context in the next prompt.
+    # TODO: Add frontend ports in the next prompt.
+    labels:
+      com.dockauri.placeholder: "frontend"
+
+volumes:
+  dockauri_data:
+    # Persistent volume for database and other durable application data.
