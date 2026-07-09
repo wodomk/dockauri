@@ -47,10 +47,10 @@ export async function fetchSettings(): Promise<SettingsPayload> {
   return await requestJson<SettingsPayload>("/api/settings");
 }
 
-export async function saveSettings(discoveryIntervalSeconds: number): Promise<SettingsPayload> {
+export async function saveSettings(payload: Partial<SettingsPayload>): Promise<SettingsPayload> {
   return await requestJson<SettingsPayload>("/api/settings", {
     method: "PUT",
-    body: JSON.stringify({ discoveryIntervalSeconds })
+    body: JSON.stringify(payload)
   });
 }
 

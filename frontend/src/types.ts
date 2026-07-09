@@ -58,6 +58,7 @@ export interface PrinterSnapshot {
 
 export interface SettingsPayload {
   discoveryIntervalSeconds: number;
+  theme: "light" | "dark" | "system";
 }
 
 export interface PrinterStateEvent {

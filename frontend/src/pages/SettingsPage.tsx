@@ -7,8 +7,10 @@ interface SettingsPageProps {
   settings: SettingsPayload;
   loading: boolean;
   settingsPending: boolean;
+  themePending: boolean;
   deletePendingPrinterId: number | null;
   onSaveSettings: (discoveryIntervalSeconds: number) => Promise<void>;
+  onThemeChange: (theme: SettingsPayload["theme"]) => Promise<void>;
   onDeletePrinter: (printerId: number) => Promise<void>;
 }
 
@@ -17,16 +19,23 @@ export function SettingsPage({
   settings,
   loading,
   settingsPending,
+  themePending,
   deletePendingPrinterId,
   onSaveSettings,
+  onThemeChange,
   onDeletePrinter
 }: SettingsPageProps): JSX.Element {
   const [discoveryIntervalSeconds, setDiscoveryIntervalSeconds] = useState(settings.discoveryIntervalSeconds);
   const [localMessage, setLocalMessage] = useState<string | null>(null);
+  const [themeMessage, setThemeMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setDiscoveryIntervalSeconds(settings.discoveryIntervalSeconds);
   }, [settings.discoveryIntervalSeconds]);
+
+  useEffect(() => {
+    setThemeMessage(null);
+  }, [settings.theme]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -37,6 +46,17 @@ export function SettingsPage({
       setLocalMessage("Interwał discovery został zapisany.");
     } catch (error) {
       setLocalMessage(error instanceof Error ? error.message : "Nie udało się zapisać ustawień.");
+    }
+  };
+
+  const handleThemeClick = async (theme: SettingsPayload["theme"]) => {
+    setThemeMessage(null);
+
+    try {
+      await onThemeChange(theme);
+      setThemeMessage("Motyw został zapisany.");
+    } catch (error) {
+      setThemeMessage(error instanceof Error ? error.message : "Nie udało się zmienić motywu.");
     }
   };
 
@@ -128,10 +148,34 @@ export function SettingsPage({
 
         <div className="rounded-3xl border border-white/10 bg-[var(--color-panel)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
           <p className="text-sm uppercase tracking-[0.24em] text-[var(--color-muted)]">Wygląd</p>
-          <h3 className="mt-3 text-xl font-medium">Placeholder</h3>
+          <h3 className="mt-3 text-xl font-medium">Motyw aplikacji</h3>
           <p className="mt-3 text-sm text-[var(--color-muted)]">
-            Ta sekcja czeka na osobny prompt poświęcony przełącznikowi motywu i docelowemu designowi.
+            Wybór jest zapisywany w tabeli `settings`, więc przetrwa restart backendu i będzie wspólny dla klientów korzystających z tego samego serwera.
           </p>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            {[
+              { value: "light", label: "Jasny" },
+              { value: "dark", label: "Ciemny" },
+              { value: "system", label: "Systemowy" }
+            ].map((option) => (
+              <button
+                className={`rounded-full border px-4 py-2 text-sm transition ${
+                  settings.theme === option.value
+                    ? "border-cyan-300/40 bg-cyan-400/15 text-cyan-100"
+                    : "border-white/10 bg-white/5 text-[var(--color-muted)] hover:text-white"
+                }`}
+                disabled={themePending}
+                key={option.value}
+                onClick={() => void handleThemeClick(option.value as SettingsPayload["theme"])}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {themeMessage ? <p className="mt-4 text-sm text-[var(--color-muted)]">{themeMessage}</p> : null}
         </div>
       </div>
     </section>

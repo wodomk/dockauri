@@ -4,16 +4,18 @@ import { Link, Route, Routes } from "react-router-dom";
 import { addPrinter, createPrinterSocket, deletePrinter, fetchPrinters, fetchSettings, saveSettings } from "./api";
 import { PrintersPage } from "./pages/PrintersPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { ThemeProvider, useTheme } from "./theme";
 import { FrontendSocketMessage, PrinterSnapshot, SettingsPayload } from "./types";
 
-export default function App(): JSX.Element {
+function AppContent(): JSX.Element {
   const [printers, setPrinters] = useState<PrinterSnapshot[]>([]);
-  const [settings, setSettings] = useState<SettingsPayload>({ discoveryIntervalSeconds: 60 });
+  const [settings, setSettings] = useState<SettingsPayload>({ discoveryIntervalSeconds: 60, theme: "dark" });
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [addPending, setAddPending] = useState(false);
   const [settingsPending, setSettingsPending] = useState(false);
   const [deletePendingPrinterId, setDeletePendingPrinterId] = useState<number | null>(null);
+  const { resolvedTheme, toggleTheme, setTheme, syncTheme, pending: themePending } = useTheme();
 
   useEffect(() => {
     let cancelled = false;
@@ -27,6 +29,7 @@ export default function App(): JSX.Element {
         if (!cancelled) {
           setPrinters(printerSnapshots);
           setSettings(settingsPayload);
+          syncTheme(settingsPayload.theme);
         }
       } catch (error) {
         if (!cancelled) {
@@ -119,13 +122,28 @@ export default function App(): JSX.Element {
     setPageError(null);
 
     try {
-      const nextSettings = await saveSettings(discoveryIntervalSeconds);
+      const nextSettings = await saveSettings({ discoveryIntervalSeconds });
       setSettings(nextSettings);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Nie udało się zapisać ustawień.");
       throw error;
     } finally {
       setSettingsPending(false);
+    }
+  };
+
+  const handleThemeChange = async (theme: SettingsPayload["theme"]) => {
+    setPageError(null);
+
+    try {
+      await setTheme(theme);
+      setSettings((current) => ({
+        ...current,
+        theme
+      }));
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Nie udało się zmienić motywu.");
+      throw error;
     }
   };
 
@@ -139,6 +157,15 @@ export default function App(): JSX.Element {
             <p className="mt-2 text-sm text-[var(--color-muted)]">{printerCountLabel}</p>
           </div>
           <nav className="flex gap-3 text-sm">
+            <button
+              className="rounded-full border border-white/10 px-4 py-2 transition hover:border-cyan-400/60 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={themePending}
+              onClick={() => void toggleTheme()}
+              title={resolvedTheme === "dark" ? "Przełącz na jasny motyw" : "Przełącz na ciemny motyw"}
+              type="button"
+            >
+              {resolvedTheme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}
+            </button>
             <Link className="rounded-full border border-white/10 px-4 py-2 transition hover:border-cyan-400/60 hover:text-cyan-300" to="/">
               Drukarki
             </Link>
@@ -169,8 +196,10 @@ export default function App(): JSX.Element {
                 settings={settings}
                 loading={loading}
                 settingsPending={settingsPending}
+                themePending={themePending}
                 deletePendingPrinterId={deletePendingPrinterId}
                 onSaveSettings={handleSaveSettings}
+                onThemeChange={handleThemeChange}
                 onDeletePrinter={handleDeletePrinter}
               />
             }
@@ -178,5 +207,13 @@ export default function App(): JSX.Element {
         </Routes>
       </main>
     </div>
+  );
+}
+
+export default function App(): JSX.Element {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

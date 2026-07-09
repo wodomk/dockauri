@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Endpointy REST do ręcznego dodawania, usuwania i listowania drukarek oraz do zapisu ustawień discovery
 - Frontendowe karty drukarek z live update przez WebSocket i formularzem ręcznego dodawania drukarki
 - Sekcja ustawień discovery z zapisem do SQLite oraz lista drukarek z możliwością usuwania
+- Logika motywu `light` / `dark` / `system` z zapisem w `settings` oraz szybkim przełącznikiem w nagłówku
 
 ### Changed
 
@@ -27,3 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GROUND_RULES.md` zmieniono tak, aby `git push` był obowiązkowym, automatycznym końcem każdej sesji
 - `docker-compose.yml` zmieniono tak, aby backend korzystał z `network_mode: host` ze względu na broadcast UDP SDCP
 - Licencję projektu zmieniono z MIT na PolyForm Noncommercial 1.0.0
+- Sekcję „Wygląd” w ustawieniach podłączono do realnego przełącznika motywu zamiast placeholdera

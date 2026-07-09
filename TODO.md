@@ -13,9 +13,9 @@
 - [ ] Widok szczegółowy pojedynczej drukarki
 - [ ] Podgląd kamery na żywo (proxy MJPEG)
 - [ ] Wykresy temperatur w czasie rzeczywistym (dysza, stół, komora)
-- [ ] Przełącznik jasny / ciemny motyw
+- [x] Przełącznik jasny / ciemny motyw
 - [ ] Responsywność mobile + desktop
-- [ ] Ekran ustawień - discovery, autentykacja, wygląd, drukarki - sekcje discovery i drukarki działają, autentykacja i wygląd pozostają placeholderami do osobnych promptów
+- [ ] Ekran ustawień - discovery, autentykacja, wygląd, drukarki - sekcje discovery, drukarki i wybór motywu działają, autentykacja pozostaje do osobnego promptu
 
 **Autentykacja**
 - [ ] Tryb bez logowania (domyślny)
@@ -36,4 +36,4 @@
 - [ ] Zweryfikować `network_mode: host` dla backendu w docelowym LXC na Proxmoxie i potwierdzić broadcast SDCP w realnej sieci
 - [ ] Dopracować zapis historii wydruków tak, aby restart backendu i ponowne połączenie nie tworzyły fałszywych wpisów terminalnych
 - [ ] Zaimplementować logikę sekcji „Autentykacja” po osobnym prompcie
-- [ ] Zaimplementować logikę sekcji „Wygląd” po osobnym prompcie
+- [ ] Dopracować docelowy design i ergonomię sekcji „Wygląd” w osobnym prompcie

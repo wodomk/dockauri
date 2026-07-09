@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import Database from "better-sqlite3";
 
-import { getPrinterById, getSettingNumber, listPrintHistoryByPrinterId, setSetting } from "../db/connection";
+import { getPrinterById, getSetting, getSettingNumber, listPrintHistoryByPrinterId, setSetting } from "../db/connection";
 import { StartupSelfTestResult } from "../health/selfTest";
 import { PrinterConnectionManager } from "../sdcp/connectionManager";
 import { SdcpDiscoveryService, DEFAULT_DISCOVERY_INTERVAL } from "../sdcp/discovery";
@@ -15,6 +15,8 @@ interface RegisterRoutesOptions {
 }
 
 const DISCOVERY_INTERVAL_SETTING_KEY = "discovery.intervalSeconds";
+const THEME_SETTING_KEY = "theme";
+const ALLOWED_THEMES = new Set(["light", "dark", "system"]);
 
 export async function registerRoutes(app: FastifyInstance, options: RegisterRoutesOptions): Promise<void> {
   app.get("/health", async () => {
@@ -85,21 +87,43 @@ export async function registerRoutes(app: FastifyInstance, options: RegisterRout
         options.database,
         DISCOVERY_INTERVAL_SETTING_KEY,
         Math.round(DEFAULT_DISCOVERY_INTERVAL / 1000)
-      )
+      ),
+      theme: getSetting(options.database, THEME_SETTING_KEY) ?? "dark"
     };
   });
 
-  app.put<{ Body: { discoveryIntervalSeconds?: number } }>("/api/settings", async (request, reply) => {
-    const seconds = Number(request.body?.discoveryIntervalSeconds);
-    if (!Number.isFinite(seconds) || seconds < 5) {
-      return reply.code(400).send({ error: "Discovery interval must be a number greater than or equal to 5 seconds." });
+  app.put<{ Body: { discoveryIntervalSeconds?: number; theme?: string } }>("/api/settings", async (request, reply) => {
+    const nextSettings = {
+      discoveryIntervalSeconds: getSettingNumber(
+        options.database,
+        DISCOVERY_INTERVAL_SETTING_KEY,
+        Math.round(DEFAULT_DISCOVERY_INTERVAL / 1000)
+      ),
+      theme: getSetting(options.database, THEME_SETTING_KEY) ?? "dark"
+    };
+
+    if (typeof request.body?.discoveryIntervalSeconds !== "undefined") {
+      const seconds = Number(request.body.discoveryIntervalSeconds);
+      if (!Number.isFinite(seconds) || seconds < 5) {
+        return reply.code(400).send({ error: "Discovery interval must be a number greater than or equal to 5 seconds." });
+      }
+
+      const roundedSeconds = Math.round(seconds);
+      setSetting(options.database, DISCOVERY_INTERVAL_SETTING_KEY, String(roundedSeconds));
+      options.discoveryService.updateIntervalMs(roundedSeconds * 1000);
+      nextSettings.discoveryIntervalSeconds = roundedSeconds;
     }
 
-    setSetting(options.database, DISCOVERY_INTERVAL_SETTING_KEY, String(Math.round(seconds)));
-    options.discoveryService.updateIntervalMs(Math.round(seconds) * 1000);
+    if (typeof request.body?.theme !== "undefined") {
+      const theme = String(request.body.theme);
+      if (!ALLOWED_THEMES.has(theme)) {
+        return reply.code(400).send({ error: "Theme must be one of: light, dark, system." });
+      }
 
-    return {
-      discoveryIntervalSeconds: Math.round(seconds)
-    };
+      setSetting(options.database, THEME_SETTING_KEY, theme);
+      nextSettings.theme = theme;
+    }
+
+    return nextSettings;
   });
 }
