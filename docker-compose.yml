@@ -1,18 +1,29 @@
 services:
   backend:
-    # TODO: Add backend build context in the next prompt.
-    # TODO: Add backend ports in the next prompt.
-    labels:
-      com.dockauri.placeholder: "backend"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DOCKAURI_BACKEND_PORT: "8080"
+      DOCKAURI_DB_PATH: "/data/dockauri.sqlite"
+    ports:
+      # 8080/tcp exposes the backend REST API, /health endpoint, and frontend-facing WebSocket relay.
+      - "8080:8080"
+      # 3000/udp is reserved by SDCP discovery for LAN broadcast and printer responses.
+      - "3000:3000/udp"
     volumes:
       - dockauri_data:/data
 
   frontend:
-    # TODO: Add frontend build context in the next prompt.
-    # TODO: Add frontend ports in the next prompt.
-    labels:
-      com.dockauri.placeholder: "frontend"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      # 4173/tcp exposes the Vite preview server for the React dashboard.
+      - "4173:4173"
+    depends_on:
+      - backend
 
 volumes:
   dockauri_data:
-    # Persistent volume for database and other durable application data.
+    # Persistent volume for the SQLite database and other durable application data.

@@ -1,0 +1,7 @@
+{
+  "_comment": "Decision: npm workspaces are intentionally not enabled yet, because backend and frontend currently build in separate Docker contexts and there is no shared package of types or utilities to justify workspace overhead at this stage.",
+  "name": "dockauri",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "npm@10.8.2"
+}

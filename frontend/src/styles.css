@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --color-bg: #07131f;
+  --color-bg-accent: #10283d;
+  --color-panel: #0d1c2b;
+  --color-fg: #f4f7fb;
+  --color-muted: #93a7bb;
+  --color-highlight: #67e8f9;
+}
+
+.theme-light {
+  color-scheme: light;
+  --color-bg: #f5f7fb;
+  --color-bg-accent: #dce9f5;
+  --color-panel: #ffffff;
+  --color-fg: #102033;
+  --color-muted: #587089;
+  --color-highlight: #0f766e;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(103, 232, 249, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 24%),
+    linear-gradient(180deg, var(--color-bg-accent) 0%, var(--color-bg) 26%, var(--color-bg) 100%);
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+}

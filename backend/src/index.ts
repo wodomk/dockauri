@@ -1,0 +1,68 @@
+import Fastify from "fastify";
+
+import { registerRoutes } from "./api/routes";
+import { registerFrontendWebsocket } from "./api/websocket";
+import { createDatabaseConnection } from "./db/connection";
+import { runStartupSelfTest, StartupSelfTestResult } from "./health/selfTest";
+import { PrinterConnectionManager } from "./sdcp/connectionManager";
+import { SdcpDiscoveryService } from "./sdcp/discovery";
+
+const BACKEND_PORT = Number(process.env.DOCKAURI_BACKEND_PORT ?? 8080);
+
+async function bootstrap(): Promise<void> {
+  const startedAt = Date.now();
+  const database = createDatabaseConnection();
+  const discoveryService = new SdcpDiscoveryService(database);
+  const connectionManager = new PrinterConnectionManager(database);
+  const app = Fastify({
+    logger: true
+  });
+
+  let latestSelfTest: StartupSelfTestResult = await runStartupSelfTest({
+    database,
+    discoveryService,
+    httpPort: BACKEND_PORT
+  });
+
+  connectionManager.syncPrintersFromDatabase();
+  discoveryService.startRecurringDiscovery(async (result) => {
+    connectionManager.syncPrintersFromDatabase();
+
+    latestSelfTest = {
+      ...latestSelfTest,
+      timestamp: new Date().toISOString(),
+      checks: {
+        ...latestSelfTest.checks,
+        discovery: {
+          ok: true,
+          printersFound: result.discoveredCount,
+          durationMs: result.durationMs
+        }
+      }
+    };
+  });
+
+  await registerFrontendWebsocket(app, connectionManager);
+  await registerRoutes(app, {
+    database,
+    connectionManager,
+    getLatestSelfTest: () => latestSelfTest,
+    startedAt
+  });
+
+  app.addHook("onClose", async () => {
+    discoveryService.close().catch(() => undefined);
+    connectionManager.shutdown();
+    database.close();
+  });
+
+  await app.listen({
+    host: "0.0.0.0",
+    port: BACKEND_PORT
+  });
+}
+
+bootstrap().catch((error) => {
+  console.error("Dockauri backend failed to start.", error);
+  process.exitCode = 1;
+});
