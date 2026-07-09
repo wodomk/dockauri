@@ -17,12 +17,13 @@ interface DiscoveryOptions {
 
 export class SdcpDiscoveryService {
   private readonly broadcastAddress: string;
-  private readonly intervalMs: number;
+  private intervalMs: number;
   private readonly timeoutMs: number;
   private readonly database: Database.Database;
   private socket?: dgram.Socket;
   private intervalHandle?: NodeJS.Timeout;
   private currentRun?: Promise<DiscoveryRunResult>;
+  private recurringCallback?: (result: DiscoveryRunResult) => void | Promise<void>;
 
   constructor(database: Database.Database, options: DiscoveryOptions = {}) {
     this.database = database;
@@ -46,25 +47,25 @@ export class SdcpDiscoveryService {
   }
 
   startRecurringDiscovery(onResult?: (result: DiscoveryRunResult) => void | Promise<void>): void {
-    if (this.intervalHandle) {
-      return;
-    }
+    this.recurringCallback = onResult;
+    this.clearRecurringDiscovery();
+    this.armRecurringDiscovery();
+  }
 
-    this.intervalHandle = setInterval(async () => {
-      try {
-        const result = await this.runDiscovery();
-        await onResult?.(result);
-      } catch (error) {
-        console.error("Recurring SDCP discovery failed.", error);
-      }
-    }, this.intervalMs);
+  updateIntervalMs(intervalMs: number): void {
+    this.intervalMs = intervalMs;
+    if (this.intervalHandle) {
+      this.clearRecurringDiscovery();
+      this.armRecurringDiscovery();
+    }
+  }
+
+  getIntervalMs(): number {
+    return this.intervalMs;
   }
 
   async close(): Promise<void> {
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
-      this.intervalHandle = undefined;
-    }
+    this.clearRecurringDiscovery();
 
     if (!this.socket) {
       return;
@@ -76,6 +77,28 @@ export class SdcpDiscoveryService {
     await new Promise<void>((resolve) => {
       socket.close(() => resolve());
     });
+  }
+
+  private armRecurringDiscovery(): void {
+    if (this.intervalHandle) {
+      return;
+    }
+
+    this.intervalHandle = setInterval(async () => {
+      try {
+        const result = await this.runDiscovery();
+        await this.recurringCallback?.(result);
+      } catch (error) {
+        console.error("Recurring SDCP discovery failed.", error);
+      }
+    }, this.intervalMs);
+  }
+
+  private clearRecurringDiscovery(): void {
+    if (this.intervalHandle) {
+      clearInterval(this.intervalHandle);
+      this.intervalHandle = undefined;
+    }
   }
 
   private async executeDiscovery(): Promise<DiscoveryRunResult> {

@@ -3,14 +3,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    # SDCP discovery relies on UDP broadcast on port 3000, which is unreliable in Docker bridge mode.
+    # The target deployment is an LXC on Proxmox in the same L2 network as the printers, so sharing the host
+    # network stack is desirable here; this still needs verification on a real LXC as soon as that environment exists.
+    network_mode: host
     environment:
       DOCKAURI_BACKEND_PORT: "8080"
       DOCKAURI_DB_PATH: "/data/dockauri.sqlite"
-    ports:
-      # 8080/tcp exposes the backend REST API, /health endpoint, and frontend-facing WebSocket relay.
-      - "8080:8080"
-      # 3000/udp is reserved by SDCP discovery for LAN broadcast and printer responses.
-      - "3000:3000/udp"
+    # With host networking enabled, backend ports are exposed directly by the host stack instead of Docker port mapping.
     volumes:
       - dockauri_data:/data
 

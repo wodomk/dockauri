@@ -4,7 +4,7 @@ Panel webowy do zarządzania drukarkami 3D Elegoo z myślą o uruchamianiu w kon
 
 ## O projekcie
 
-Dockauri to otwartoźródłowy projekt, którego celem jest zbudowanie stabilnego panelu webowego do obsługi drukarek 3D Elegoo przez SDCP, WebSocket i JSON. Na obecnym etapie repozytorium zawiera już bazowy stack aplikacji: backend w Node.js + TypeScript z Fastify, SQLite i szkieletem komunikacji SDCP oraz frontend w React + Vite + TypeScript + Tailwind CSS.
+Dockauri to otwartoźródłowy projekt, którego celem jest zbudowanie stabilnego panelu webowego do obsługi drukarek 3D Elegoo przez SDCP, WebSocket i JSON. Na obecnym etapie repozytorium zawiera już działający fundament: backend w Node.js + TypeScript z Fastify, SQLite, discovery SDCP i parserem statusów oraz frontend w React + Vite + TypeScript + Tailwind CSS.
 
 ## Wymagania
 
@@ -40,14 +40,21 @@ Aktualnie po stronie repozytorium działają następujące elementy bazowe:
 
 - backendowy endpoint `/health`,
 - zapis wykrytych drukarek do SQLite przez UDP discovery SDCP,
-- szkielet connection managera WebSocket do drukarek,
-- frontendowe trasy `/` i `/settings`,
+- connection manager WebSocket do drukarek z ujednoliconym `PrinterState`,
+- ręczne dodawanie i usuwanie drukarek przez REST API,
+- frontendowe widoki `/` i `/settings` z live update przez WebSocket,
+- zapis interwału discovery do tabeli `settings`,
 - trwały wolumen Dockera na plik bazy danych.
 
-Domyślne porty kontenerów:
+Uwagi infrastrukturalne:
 
-- `8080/tcp` - backend REST API, `/health` oraz kanał WebSocket dla frontendu,
-- `3000/udp` - discovery SDCP w sieci lokalnej,
+- backend działa z `network_mode: host`, ponieważ discovery SDCP wymaga broadcastu UDP, który nie jest wiarygodny w domyślnej sieci bridge Dockera,
+- to ustawienie jest świadome dla docelowego LXC na Proxmoxie i wymaga jeszcze potwierdzenia na realnym środowisku.
+
+Domyślne porty usług:
+
+- `8080/tcp` - backend REST API, `/health` oraz kanał WebSocket dla frontendu, wystawione bezpośrednio przez hosta przez `network_mode: host`,
+- `3000/udp` - discovery SDCP w sieci lokalnej, również wystawione bezpośrednio przez hosta,
 - `4173/tcp` - frontend React uruchamiany przez Vite preview.
 
 ## Licencja

@@ -2,17 +2,25 @@ import Fastify from "fastify";
 
 import { registerRoutes } from "./api/routes";
 import { registerFrontendWebsocket } from "./api/websocket";
-import { createDatabaseConnection } from "./db/connection";
+import { createDatabaseConnection, getSettingNumber } from "./db/connection";
 import { runStartupSelfTest, StartupSelfTestResult } from "./health/selfTest";
 import { PrinterConnectionManager } from "./sdcp/connectionManager";
-import { SdcpDiscoveryService } from "./sdcp/discovery";
+import { DEFAULT_DISCOVERY_INTERVAL, SdcpDiscoveryService } from "./sdcp/discovery";
 
 const BACKEND_PORT = Number(process.env.DOCKAURI_BACKEND_PORT ?? 8080);
+const DISCOVERY_INTERVAL_SETTING_KEY = "discovery.intervalSeconds";
 
 async function bootstrap(): Promise<void> {
   const startedAt = Date.now();
   const database = createDatabaseConnection();
-  const discoveryService = new SdcpDiscoveryService(database);
+  const discoveryIntervalSeconds = getSettingNumber(
+    database,
+    DISCOVERY_INTERVAL_SETTING_KEY,
+    Math.round(DEFAULT_DISCOVERY_INTERVAL / 1000)
+  );
+  const discoveryService = new SdcpDiscoveryService(database, {
+    intervalMs: discoveryIntervalSeconds * 1000
+  });
   const connectionManager = new PrinterConnectionManager(database);
   const app = Fastify({
     logger: true
@@ -42,10 +50,11 @@ async function bootstrap(): Promise<void> {
     };
   });
 
-  await registerFrontendWebsocket(app, connectionManager);
+  await registerFrontendWebsocket(app, database, connectionManager);
   await registerRoutes(app, {
     database,
     connectionManager,
+    discoveryService,
     getLatestSelfTest: () => latestSelfTest,
     startedAt
   });
