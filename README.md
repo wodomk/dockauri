@@ -59,4 +59,4 @@ Domyślne porty usług:
 
 ## Licencja
 
-Projekt jest udostępniany na licencji MIT. Szczegóły znajdują się w pliku `LICENSE`.
+Projekt jest udostępniany na licencji PolyForm Noncommercial 1.0.0. W praktyce oznacza to, że kod pozostaje publicznie dostępny: można go czytać, forkować, modyfikować, używać do własnych niekomercyjnych celów i wysyłać poprawki przez pull requesty. Natomiast wykorzystanie tego kodu w produkcie albo usłudze, z której ktoś czerpie zysk, wymaga osobnej zgody autorów projektu. Pełny tekst licencji: https://polyformproject.org/licenses/noncommercial/1.0.0/ oraz plik `LICENSE`.

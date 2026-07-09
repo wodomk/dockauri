@@ -26,3 +26,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `README.md` zaktualizowano o bieżący stack, działające elementy i porty usług
 - `GROUND_RULES.md` zmieniono tak, aby `git push` był obowiązkowym, automatycznym końcem każdej sesji
 - `docker-compose.yml` zmieniono tak, aby backend korzystał z `network_mode: host` ze względu na broadcast UDP SDCP
+- Licencję projektu zmieniono z MIT na PolyForm Noncommercial 1.0.0
