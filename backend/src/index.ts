@@ -29,7 +29,8 @@ async function bootstrap(): Promise<void> {
 
   // TODO: Narrow CORS together with the future GUI-managed authentication mode.
   await app.register(cors, {
-    origin: true
+    origin: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
   });
 
   let latestSelfTest: StartupSelfTestResult = await runStartupSelfTest({
