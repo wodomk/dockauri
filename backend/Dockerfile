@@ -3,8 +3,9 @@ FROM node:20-bookworm-slim
 WORKDIR /app
 
 COPY package.json ./
+COPY package-lock.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
