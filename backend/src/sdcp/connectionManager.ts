@@ -622,12 +622,12 @@ export class PrinterConnectionManager extends EventEmitter {
     currentTicks: number | null,
     totalTicks: number | null
   ): number | null {
-    if (currentLayer !== null && totalLayers && totalLayers > 0) {
-      return Math.max(0, Math.min(100, Math.round((currentLayer / totalLayers) * 100)));
-    }
-
     if (currentTicks !== null && totalTicks && totalTicks > 0) {
       return Math.max(0, Math.min(100, Math.round((currentTicks / totalTicks) * 100)));
+    }
+
+    if (currentLayer !== null && totalLayers && totalLayers > 0) {
+      return Math.max(0, Math.min(100, Math.round((currentLayer / totalLayers) * 100)));
     }
 
     return null;

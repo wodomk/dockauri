@@ -20,6 +20,7 @@
 **Autentykacja**
 - [ ] Tryb bez logowania (domyślny)
 - [ ] Tryb login/hasło włączany z poziomu Settings, hasła haszowane w bazie
+- [ ] Wraz z wdrożeniem autentykacji z GUI zawęzić konfigurację CORS do dozwolonych originów i powiązać ją z wybranym trybem dostępu
 
 **Historia i dane**
 - [ ] Pełna, bezterminowa historia wydruków w bazie danych - działa podstawowy zapis migawek przy przejściu w stan terminalny; wymaga dalszego dopracowania logiki deduplikacji i korelacji z zadaniami wydruku

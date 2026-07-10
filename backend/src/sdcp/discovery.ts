@@ -6,6 +6,7 @@ import { DiscoveryRunResult, NormalizedDiscoveredPrinter, SdcpDiscoveryAttribute
 
 const DISCOVERY_PORT = 3000;
 const DISCOVERY_MESSAGE = "M99999";
+const DISCOVERY_MESSAGE_BUFFER = Buffer.from(DISCOVERY_MESSAGE);
 const DEFAULT_DISCOVERY_TIMEOUT_MS = 3_000;
 const DEFAULT_DISCOVERY_INTERVAL_MS = 60_000;
 
@@ -108,6 +109,10 @@ export class SdcpDiscoveryService {
 
     await new Promise<void>((resolve, reject) => {
       const onMessage = (message: Buffer) => {
+        if (message.equals(DISCOVERY_MESSAGE_BUFFER)) {
+          return;
+        }
+
         const printer = this.parseDiscoveryResponse(message);
 
         if (!printer) {
@@ -129,7 +134,7 @@ export class SdcpDiscoveryService {
       }, this.timeoutMs);
 
       socket.on("message", onMessage);
-      socket.send(Buffer.from(DISCOVERY_MESSAGE), DISCOVERY_PORT, this.broadcastAddress, (error) => {
+      socket.send(DISCOVERY_MESSAGE_BUFFER, DISCOVERY_PORT, this.broadcastAddress, (error) => {
         if (error) {
           clearTimeout(timeout);
           socket.off("message", onMessage);

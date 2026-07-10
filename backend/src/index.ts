@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 
 import { registerRoutes } from "./api/routes";
 import { registerFrontendWebsocket } from "./api/websocket";
@@ -24,6 +25,11 @@ async function bootstrap(): Promise<void> {
   const connectionManager = new PrinterConnectionManager(database);
   const app = Fastify({
     logger: true
+  });
+
+  // TODO: Narrow CORS together with the future GUI-managed authentication mode.
+  await app.register(cors, {
+    origin: true
   });
 
   let latestSelfTest: StartupSelfTestResult = await runStartupSelfTest({
