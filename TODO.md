@@ -10,7 +10,7 @@
 
 **Panel / GUI**
 - [ ] Widok kart wszystkich drukarek (styl Bambu Handy) - funkcjonalny grid z live statusem potwierdzono na żywych danych z prawdziwej drukarki; docelowy design bambulabowy czeka na osobny prompt
-- [ ] Widok szczegółowy pojedynczej drukarki
+- [x] Widok szczegółowy pojedynczej drukarki
 - [ ] Podgląd kamery na żywo (proxy MJPEG)
 - [ ] Wykresy temperatur w czasie rzeczywistym (dysza, stół, komora)
 - [x] Przełącznik jasny / ciemny motyw

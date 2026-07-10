@@ -1,11 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Route, Routes, useParams } from "react-router-dom";
 
 import { addPrinter, createPrinterSocket, deletePrinter, fetchPrinters, fetchSettings, saveSettings } from "./api";
 import { PrintersPage } from "./pages/PrintersPage";
+import { PrinterDetailPage } from "./pages/PrinterDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ThemeProvider, useTheme } from "./theme";
 import { FrontendSocketMessage, PrinterSnapshot, SettingsPayload } from "./types";
+
+interface PrinterDetailRouteProps {
+  printers: PrinterSnapshot[];
+  loading: boolean;
+}
+
+function PrinterDetailRoute({ printers, loading }: PrinterDetailRouteProps): JSX.Element {
+  const { id } = useParams<{ id: string }>();
+  const printerId = Number(id);
+  const printer = Number.isInteger(printerId)
+    ? printers.find((snapshot) => snapshot.printer.id === printerId)
+    : undefined;
+
+  return <PrinterDetailPage printer={printer} loading={loading} />;
+}
 
 function AppContent(): JSX.Element {
   const [printers, setPrinters] = useState<PrinterSnapshot[]>([]);
@@ -188,6 +204,7 @@ function AppContent(): JSX.Element {
             path="/"
             element={<PrintersPage printers={printers} loading={loading} addPending={addPending} onAddPrinter={handleAddPrinter} />}
           />
+          <Route path="/printers/:id" element={<PrinterDetailRoute printers={printers} loading={loading} />} />
           <Route
             path="/settings"
             element={

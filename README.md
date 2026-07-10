@@ -42,14 +42,14 @@ Aktualnie po stronie repozytorium działają następujące elementy bazowe:
 - zapis wykrytych drukarek do SQLite przez UDP discovery SDCP,
 - connection manager WebSocket do drukarek z ujednoliconym `PrinterState`,
 - ręczne dodawanie i usuwanie drukarek przez REST API,
-- frontendowe widoki `/` i `/settings` z live update przez WebSocket,
+- frontendowe widoki `/`, `/printers/:id` i `/settings` z live update przez WebSocket oraz historią wydruków w szczegółach drukarki,
 - zapis interwału discovery do tabeli `settings`,
 - trwały wolumen Dockera na plik bazy danych.
 
 Uwagi infrastrukturalne:
 
 - backend działa z `network_mode: host`, ponieważ discovery SDCP wymaga broadcastu UDP, który nie jest wiarygodny w domyślnej sieci bridge Dockera,
-- to ustawienie jest świadome dla docelowego LXC na Proxmoxie i wymaga jeszcze potwierdzenia na realnym środowisku.
+- to ustawienie zostało potwierdzone na docelowym LXC na Proxmoxie podczas discovery i odbioru danych z żywej drukarki.
 
 Domyślne porty usług:
 

@@ -1,4 +1,4 @@
-import { FrontendSocketMessage, PrinterSnapshot, SettingsPayload } from "./types";
+import { FrontendSocketMessage, PrintHistoryRecord, PrinterSnapshot, SettingsPayload } from "./types";
 
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8080`;
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -23,6 +23,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 export async function fetchPrinters(): Promise<PrinterSnapshot[]> {
   const response = await requestJson<{ printers: PrinterSnapshot[] }>("/api/printers");
   return response.printers;
+}
+
+export async function fetchPrinterHistory(printerId: number): Promise<PrintHistoryRecord[]> {
+  const response = await requestJson<{ history: PrintHistoryRecord[] }>(`/api/printers/${printerId}/history`);
+  return response.history;
 }
 
 export async function addPrinter(ipAddress: string): Promise<PrinterSnapshot> {

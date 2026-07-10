@@ -56,6 +56,16 @@ export interface PrinterSnapshot {
   state: PrinterState;
 }
 
+export interface PrintHistoryRecord {
+  id: number;
+  printer_id: number;
+  file_name: string;
+  started_at: string;
+  finished_at: string | null;
+  status: "completed" | "failed" | "cancelled";
+  progress_snapshot: string | null;
+}
+
 export interface SettingsPayload {
   discoveryIntervalSeconds: number;
   theme: "light" | "dark" | "system";

@@ -1,4 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { PrinterSnapshot } from "../types";
 
@@ -76,10 +77,12 @@ export function PrintersPage({ printers, loading, addPending, onAddPrinter }: Pr
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {sortedPrinters.map((snapshot) => (
-          <article
-            className="rounded-3xl border border-white/10 bg-[var(--color-panel)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)]"
+          <Link
+            className="group block rounded-3xl outline-none transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-cyan-300/60"
             key={snapshot.printer.id}
+            to={`/printers/${snapshot.printer.id}`}
           >
+            <article className="h-full rounded-3xl border border-white/10 bg-[var(--color-panel)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)] transition group-hover:border-cyan-300/30">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">{snapshot.printer.source}</p>
@@ -128,7 +131,8 @@ export function PrintersPage({ printers, loading, addPending, onAddPrinter }: Pr
                 {snapshot.state.errorMessage}
               </div>
             ) : null}
-          </article>
+            </article>
+          </Link>
         ))}
 
         {!loading && sortedPrinters.length === 0 ? (
