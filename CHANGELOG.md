@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `TODO.md` zsynchronizowano ze stanem potwierdzonym podczas pierwszego testu na żywym sprzęcie 2026-07-10
 - `GROUND_RULES.md` rozszerzono o obowiązek aktualizacji `README.md`, gdy jego treść przestaje być zgodna ze stanem repozytorium
 - `GROUND_RULES.md` rozszerzono o jednoznacznie zapisany stack technologiczny projektu
 - `README.md` zaktualizowano o bieżący stack, działające elementy i porty usług

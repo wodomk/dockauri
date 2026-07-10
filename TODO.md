@@ -1,7 +1,7 @@
 # TODO
 
 **Rdzeń (MVP)**
-- [ ] Discovery drukarek przez UDP broadcast przy starcie usługi - działa broadcast `M99999` na `3000/udp`, zapis nowych drukarek do SQLite i aktualizacja `last_known_ip` / `last_seen_at`; do domknięcia zostaje walidacja `network_mode: host` na docelowym LXC
+- [x] Discovery drukarek przez UDP broadcast przy starcie usługi - broadcast `M99999` na `3000/udp`, zapis nowych drukarek do SQLite i aktualizacja `last_known_ip` / `last_seen_at` potwierdzone na realnym LXC z żywą drukarką
 - [x] Discovery cykliczne w tle, aktualizacja adresów IP po MainboardID
 - [x] Dodawanie drukarki ręcznie po adresie IP (z poziomu GUI)
 - [x] Connection manager - jedno długożyjące połączenie WebSocket per drukarka, reconnect z backoffem
@@ -9,7 +9,7 @@
 - [x] Endpoint i strona `/health` z pełnym testem startowym
 
 **Panel / GUI**
-- [ ] Widok kart wszystkich drukarek (styl Bambu Handy) - działa funkcjonalny grid z live statusem; docelowy design bambulabowy czeka na osobny prompt
+- [ ] Widok kart wszystkich drukarek (styl Bambu Handy) - funkcjonalny grid z live statusem potwierdzono na żywych danych z prawdziwej drukarki; docelowy design bambulabowy czeka na osobny prompt
 - [ ] Widok szczegółowy pojedynczej drukarki
 - [ ] Podgląd kamery na żywo (proxy MJPEG)
 - [ ] Wykresy temperatur w czasie rzeczywistym (dysza, stół, komora)
@@ -34,8 +34,8 @@
 - [ ] Sterowanie drukarką (start / pauza / stop / ruchy osi) z poziomu GUI
 
 **Nowe zadania techniczne**
-- [ ] **KRYTYCZNE:** w środowisku z dostępnym Node.js i npm uruchomić `npm install` osobno w `backend/` i `frontend/`, zweryfikować build oraz `tsc --noEmit`, commitować oba prawdziwe pliki `package-lock.json`, a następnie zmienić oba Dockerfile z `npm install` na `npm ci`; bieżące środowisko Codexa nie udostępnia `node`, `npm` ani Dockera, więc lockfile nie wolno było tworzyć ręcznie
-- [ ] Zweryfikować `network_mode: host` dla backendu w docelowym LXC na Proxmoxie i potwierdzić broadcast SDCP w realnej sieci
+- [x] Wygenerować i commitować prawdziwe `package-lock.json` dla backendu i frontendu oraz zmienić oba Dockerfile z `npm install` na `npm ci` - wykonane bezpośrednio w środowisku wdrożeniowym z Dockerem na CT i zsynchronizowane z głównym repozytorium
+- [x] Zweryfikować `network_mode: host` dla backendu w docelowym LXC na Proxmoxie i potwierdzić broadcast SDCP w realnej sieci - potwierdzone z żywą drukarką
 - [ ] Dopracować zapis historii wydruków tak, aby restart backendu i ponowne połączenie nie tworzyły fałszywych wpisów terminalnych
 - [ ] Zaimplementować logikę sekcji „Autentykacja” po osobnym prompcie
 - [ ] Dopracować docelowy design i ergonomię sekcji „Wygląd” w osobnym prompcie
