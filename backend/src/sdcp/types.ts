@@ -191,4 +191,3 @@ export interface PrinterStateEvent {
 export interface PrinterRemovalEvent {
   printerId: number;
 }
-}

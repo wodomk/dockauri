@@ -34,6 +34,7 @@
 - [ ] Sterowanie drukarką (start / pauza / stop / ruchy osi) z poziomu GUI
 
 **Nowe zadania techniczne**
+- [ ] **KRYTYCZNE:** w środowisku z dostępnym Node.js i npm uruchomić `npm install` osobno w `backend/` i `frontend/`, zweryfikować build oraz `tsc --noEmit`, commitować oba prawdziwe pliki `package-lock.json`, a następnie zmienić oba Dockerfile z `npm install` na `npm ci`; bieżące środowisko Codexa nie udostępnia `node`, `npm` ani Dockera, więc lockfile nie wolno było tworzyć ręcznie
 - [ ] Zweryfikować `network_mode: host` dla backendu w docelowym LXC na Proxmoxie i potwierdzić broadcast SDCP w realnej sieci
 - [ ] Dopracować zapis historii wydruków tak, aby restart backendu i ponowne połączenie nie tworzyły fałszywych wpisów terminalnych
 - [ ] Zaimplementować logikę sekcji „Autentykacja” po osobnym prompcie

@@ -35,3 +35,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zapytania REST z frontendu na porcie 4173 do backendu na porcie 8080 otrzymują poprawne nagłówki CORS
 - Postęp wydruku jest wyliczany z pól czasowych SDCP `CurrentTicks` i `TotalTicks`, z proporcją warstw wyłącznie jako fallbackiem
 - Własny broadcast discovery `M99999` jest odfiltrowywany przed próbą parsowania JSON i nie generuje fałszywych ostrzeżeń
+- Usunięto osierocony nawias klamrowy z `backend/src/sdcp/types.ts`, który powodował błąd kompilacji `TS1128`
+- Linie `@fastify/websocket` i `@fastify/cors` podniesiono do wydań 11.x jawnie zgodnych z Fastify 5, eliminując znaną regresję zgodności wersji pluginów
