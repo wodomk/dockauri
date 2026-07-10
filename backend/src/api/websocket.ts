@@ -15,7 +15,7 @@ export async function registerFrontendWebsocket(
   await app.register(websocket);
 
   app.get("/ws", { websocket: true }, (connection) => {
-    const client = connection.socket;
+    const client = connection;
 
     const forwardState = (event: PrinterStateEvent) => {
       const printer = getPrinterById(database, event.printerId);

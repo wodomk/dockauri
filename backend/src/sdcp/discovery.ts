@@ -207,7 +207,7 @@ export class SdcpDiscoveryService {
       return data.Attributes;
     }
 
-    return data;
+    return data as SdcpDiscoveryAttributes;
   }
 }
 
