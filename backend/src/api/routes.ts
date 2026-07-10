@@ -22,7 +22,9 @@ const ALLOWED_THEMES = new Set(["light", "dark", "system"]);
 const CAMERA_CONNECTION_TIMEOUT_MS = 5_000;
 
 function openCameraStream(videoUrl: string): Promise<IncomingMessage> {
-  const parsedUrl = new URL(videoUrl);
+  const trimmedVideoUrl = videoUrl.trim();
+  const normalizedVideoUrl = /^https?:\/\//i.test(trimmedVideoUrl) ? trimmedVideoUrl : `http://${trimmedVideoUrl}`;
+  const parsedUrl = new URL(normalizedVideoUrl);
   if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
     return Promise.reject(new Error("Printer returned an unsupported camera stream protocol."));
   }

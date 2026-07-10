@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- URL strumienia kamery bez schematu, zwracany przez drukarkę, jest normalizowany przez dodanie `http://`
 - Zapytania REST z frontendu na porcie 4173 do backendu na porcie 8080 otrzymują poprawne nagłówki CORS
 - Postęp wydruku jest wyliczany z pól czasowych SDCP `CurrentTicks` i `TotalTicks`, z proporcją warstw wyłącznie jako fallbackiem
 - Własny broadcast discovery `M99999` jest odfiltrowywany przed próbą parsowania JSON i nie generuje fałszywych ostrzeżeń

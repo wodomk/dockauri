@@ -183,6 +183,7 @@ export class SdcpDiscoveryService {
         return null;
       }
 
+      // TODO: Validate MainboardIP before persisting it and using it to construct printer WebSocket URLs.
       return {
         id: parsed.Id ?? data.MainboardID,
         name: data.Name ?? data.MachineName ?? data.MainboardID,

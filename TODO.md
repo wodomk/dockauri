@@ -34,6 +34,7 @@
 - [ ] Sterowanie drukarką (start / pauza / stop / ruchy osi) z poziomu GUI
 
 **Nowe zadania techniczne**
+- [ ] Dodać walidację `MainboardIP` z odpowiedzi discovery przed zapisem i użyciem do budowy URL WebSocket drukarki
 - [x] Wygenerować i commitować prawdziwe `package-lock.json` dla backendu i frontendu oraz zmienić oba Dockerfile z `npm install` na `npm ci` - wykonane bezpośrednio w środowisku wdrożeniowym z Dockerem na CT i zsynchronizowane z głównym repozytorium
 - [x] Zweryfikować `network_mode: host` dla backendu w docelowym LXC na Proxmoxie i potwierdzić broadcast SDCP w realnej sieci - potwierdzone z żywą drukarką
 - [ ] Dopracować zapis historii wydruków tak, aby restart backendu i ponowne połączenie nie tworzyły fałszywych wpisów terminalnych
