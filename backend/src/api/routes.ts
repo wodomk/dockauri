@@ -1,3 +1,5 @@
+import { IncomingMessage, request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { FastifyInstance } from "fastify";
 import Database from "better-sqlite3";
 
@@ -17,6 +19,37 @@ interface RegisterRoutesOptions {
 const DISCOVERY_INTERVAL_SETTING_KEY = "discovery.intervalSeconds";
 const THEME_SETTING_KEY = "theme";
 const ALLOWED_THEMES = new Set(["light", "dark", "system"]);
+const CAMERA_CONNECTION_TIMEOUT_MS = 5_000;
+
+function openCameraStream(videoUrl: string): Promise<IncomingMessage> {
+  const parsedUrl = new URL(videoUrl);
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    return Promise.reject(new Error("Printer returned an unsupported camera stream protocol."));
+  }
+
+  const requestStream = parsedUrl.protocol === "https:" ? httpsRequest : httpRequest;
+
+  return new Promise<IncomingMessage>((resolve, reject) => {
+    const upstreamRequest = requestStream(parsedUrl, { method: "GET" }, (upstreamResponse) => {
+      upstreamRequest.setTimeout(0);
+
+      const statusCode = upstreamResponse.statusCode ?? 502;
+      if (statusCode < 200 || statusCode >= 300) {
+        upstreamResponse.resume();
+        reject(new Error(`Printer camera stream returned HTTP ${statusCode}.`));
+        return;
+      }
+
+      resolve(upstreamResponse);
+    });
+
+    upstreamRequest.setTimeout(CAMERA_CONNECTION_TIMEOUT_MS, () => {
+      upstreamRequest.destroy(new Error("Timed out while connecting to the printer camera stream."));
+    });
+    upstreamRequest.once("error", reject);
+    upstreamRequest.end();
+  });
+}
 
 export async function registerRoutes(app: FastifyInstance, options: RegisterRoutesOptions): Promise<void> {
   app.get("/health", async () => {
@@ -79,6 +112,64 @@ export async function registerRoutes(app: FastifyInstance, options: RegisterRout
     return {
       history: listPrintHistoryByPrinterId(options.database, printerId)
     };
+  });
+
+  app.get<{ Params: { id: string } }>("/api/printers/:id/camera/stream", async (request, reply) => {
+    const printerId = Number(request.params.id);
+    if (!Number.isInteger(printerId)) {
+      return reply.code(400).send({ error: "Invalid printer id." });
+    }
+
+    if (!getPrinterById(options.database, printerId)) {
+      return reply.code(404).send({ error: "Printer not found." });
+    }
+
+    let upstreamResponse: IncomingMessage | undefined;
+    const closeUpstream = () => {
+      if (upstreamResponse && !upstreamResponse.destroyed) {
+        upstreamResponse.destroy();
+      }
+    };
+
+    request.raw.once("aborted", closeUpstream);
+    reply.raw.once("close", closeUpstream);
+
+    try {
+      const videoUrl = await options.connectionManager.requestVideoStreamUrl(printerId);
+      upstreamResponse = await openCameraStream(videoUrl);
+
+      if (request.raw.aborted || reply.raw.destroyed) {
+        reply.hijack();
+        closeUpstream();
+        return reply;
+      }
+
+      const contentType = upstreamResponse.headers["content-type"];
+
+      if (typeof contentType !== "string" || !/\bboundary\s*=/i.test(contentType)) {
+        upstreamResponse.destroy();
+        throw new Error("Printer camera stream response is missing its Content-Type boundary.");
+      }
+
+      upstreamResponse.once("error", (error) => {
+        request.log.error(error, "Printer camera stream failed while proxying MJPEG data.");
+        if (!reply.raw.destroyed) {
+          reply.raw.destroy(error);
+        }
+      });
+
+      reply.hijack();
+      reply.raw.statusCode = 200;
+      reply.raw.setHeader("Content-Type", contentType);
+      reply.raw.setHeader("Cache-Control", "no-store");
+      upstreamResponse.pipe(reply.raw);
+      return reply;
+    } catch (error) {
+      request.log.error(error, "Unable to open printer camera stream.");
+      return reply.code(502).send({
+        error: error instanceof Error ? error.message : "Unable to open printer camera stream."
+      });
+    }
   });
 
   app.get("/api/settings", async () => {

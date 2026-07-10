@@ -119,6 +119,18 @@ export interface SdcpErrorFrame {
   Topic?: string;
 }
 
+export interface SdcpResponseFrame {
+  Id?: string;
+  Data?: {
+    Cmd?: number;
+    Data?: Record<string, unknown>;
+    RequestID?: string;
+    MainboardID?: string;
+    TimeStamp?: number;
+  };
+  Topic?: string;
+}
+
 export interface SdcpRequestFrame {
   Id: string;
   Data: {

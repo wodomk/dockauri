@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Podgląd kamery `VIDEO_STREAM` w szczegółach drukarki przez strumieniujący proxy MJPEG i komendę SDCP 386
 - Widok szczegółowy drukarki pod `/printers/:id` z telemetrią na żywo, czasem wydruku i historią z REST API
 - Inicjalizacja repozytorium projektu Dockauri
 - Root `package.json` z decyzją o niewłączaniu npm workspaces na tym etapie

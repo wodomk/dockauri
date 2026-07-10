@@ -19,6 +19,7 @@ import {
   SdcpAttributesPayload,
   SdcpErrorFrame,
   SdcpRequestFrame,
+  SdcpResponseFrame,
   SdcpStatusFrame,
   SdcpStatusPayload
 } from "./types";
@@ -37,6 +38,14 @@ interface ParsedSocketMessage {
   status?: SdcpStatusFrame;
   attributes?: SdcpAttributesFrame;
   error?: SdcpErrorFrame;
+  response?: SdcpResponseFrame;
+}
+
+interface PendingControlRequest {
+  mainboardId: string;
+  resolve: (data: Record<string, unknown>) => void;
+  reject: (error: Error) => void;
+  timeout: NodeJS.Timeout;
 }
 
 interface ManualPrinterProbeResult {
@@ -51,13 +60,17 @@ interface ManualPrinterProbeResult {
 const STATUS_TOPIC = "sdcp/status/";
 const ATTRIBUTES_TOPIC = "sdcp/attributes/";
 const ERROR_TOPIC = "sdcp/error/";
+const RESPONSE_TOPIC = "sdcp/response/";
 const REQUEST_ATTRIBUTES_CMD = 1;
 const REQUEST_STATUS_CMD = 0;
+const ENABLE_VIDEO_STREAM_CMD = 386;
+const CONTROL_REQUEST_TIMEOUT_MS = 5_000;
 
 export class PrinterConnectionManager extends EventEmitter {
   private readonly database: Database.Database;
   private readonly connections = new Map<string, ManagedConnection>();
   private readonly states = new Map<number, PrinterState>();
+  private readonly pendingControlRequests = new Map<string, PendingControlRequest>();
 
   constructor(database: Database.Database) {
     super();
@@ -118,6 +131,24 @@ export class PrinterConnectionManager extends EventEmitter {
       printer,
       state: this.getOrCreateState(printer)
     }));
+  }
+
+  async requestVideoStreamUrl(printerId: number): Promise<string> {
+    const connection = Array.from(this.connections.values()).find((item) => item.printer.id === printerId);
+    if (!connection?.socket || connection.socket.readyState !== WebSocket.OPEN) {
+      throw new Error("Printer is not connected; camera stream cannot be enabled.");
+    }
+
+    const response = await this.sendControlRequestAndWait(connection, ENABLE_VIDEO_STREAM_CMD, { Enable: 1 });
+    if (typeof response.Ack === "number" && response.Ack !== 0) {
+      throw new Error(`Printer rejected the camera stream request with SDCP acknowledgement ${response.Ack}.`);
+    }
+
+    if (typeof response.VideoUrl !== "string" || response.VideoUrl.trim() === "") {
+      throw new Error("Printer response did not contain a camera stream URL.");
+    }
+
+    return response.VideoUrl;
   }
 
   async addManualPrinter(ipAddress: string): Promise<{ printer: PrinterRecord; state: PrinterState }> {
@@ -218,6 +249,8 @@ export class PrinterConnectionManager extends EventEmitter {
         connection.heartbeatInterval = undefined;
       }
 
+      this.rejectPendingRequests(connection.printer.mainboard_id, new Error("Printer connection closed before the SDCP response arrived."));
+
       this.emitState(this.markPrinterConnectivity(connection.printer, false));
 
       this.scheduleReconnect(connection);
@@ -238,6 +271,8 @@ export class PrinterConnectionManager extends EventEmitter {
   }
 
   private disposeConnection(connection: ManagedConnection): void {
+    this.rejectPendingRequests(connection.printer.mainboard_id, new Error("Printer connection was disposed before the SDCP response arrived."));
+
     if (connection.reconnectTimeout) {
       clearTimeout(connection.reconnectTimeout);
       connection.reconnectTimeout = undefined;
@@ -263,6 +298,10 @@ export class PrinterConnectionManager extends EventEmitter {
 
     const previousState = this.getOrCreateState(connection.printer);
     let nextState = previousState;
+
+    if (parsed.response) {
+      this.resolvePendingRequest(parsed.response);
+    }
 
     if (parsed.attributes?.Attributes) {
       nextState = this.applyAttributes(nextState, parsed.attributes.Attributes, parsed.topic);
@@ -296,13 +335,15 @@ export class PrinterConnectionManager extends EventEmitter {
       const status = this.extractStatusFrame(raw, topic);
       const attributes = this.extractAttributesFrame(raw, topic);
       const error = this.extractErrorFrame(raw, topic);
+      const response = this.extractResponseFrame(raw, topic);
 
       return {
         topic,
         raw,
         status,
         attributes,
-        error
+        error,
+        response
       };
     } catch (error) {
       console.warn("Ignoring malformed SDCP WebSocket payload.", error);
@@ -358,6 +399,46 @@ export class PrinterConnectionManager extends EventEmitter {
     }
 
     return undefined;
+  }
+
+  private extractResponseFrame(raw: Record<string, unknown>, topic: string | null): SdcpResponseFrame | undefined {
+    if (topic?.startsWith(RESPONSE_TOPIC) && raw.Data && typeof raw.Data === "object") {
+      return raw as unknown as SdcpResponseFrame;
+    }
+
+    return undefined;
+  }
+
+  private resolvePendingRequest(response: SdcpResponseFrame): void {
+    const requestId = response.Data?.RequestID;
+    if (!requestId) {
+      return;
+    }
+
+    const pending = this.pendingControlRequests.get(requestId);
+    if (!pending) {
+      return;
+    }
+
+    if (response.Data?.MainboardID && response.Data.MainboardID !== pending.mainboardId) {
+      return;
+    }
+
+    clearTimeout(pending.timeout);
+    this.pendingControlRequests.delete(requestId);
+    pending.resolve(response.Data?.Data ?? {});
+  }
+
+  private rejectPendingRequests(mainboardId: string, error: Error): void {
+    for (const [requestId, pending] of this.pendingControlRequests.entries()) {
+      if (pending.mainboardId !== mainboardId) {
+        continue;
+      }
+
+      clearTimeout(pending.timeout);
+      this.pendingControlRequests.delete(requestId);
+      pending.reject(error);
+    }
   }
 
   private getOrCreateState(printer: PrinterRecord): PrinterState {
@@ -690,16 +771,74 @@ export class PrinterConnectionManager extends EventEmitter {
     this.sendControlRequest(socket, mainboardId, REQUEST_STATUS_CMD);
   }
 
-  private sendControlRequest(socket: WebSocket, mainboardId: string, cmd: number): void {
+  private sendControlRequest(
+    socket: WebSocket,
+    mainboardId: string,
+    cmd: number,
+    data: Record<string, unknown> = {}
+  ): void {
     if (socket.readyState !== WebSocket.OPEN) {
       return;
     }
 
-    const request: SdcpRequestFrame = {
+    socket.send(JSON.stringify(this.buildControlRequest(mainboardId, cmd, data)));
+  }
+
+  private sendControlRequestAndWait(
+    connection: ManagedConnection,
+    cmd: number,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const socket = connection.socket;
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return Promise.reject(new Error("Printer is not connected."));
+    }
+
+    const request = this.buildControlRequest(connection.printer.mainboard_id, cmd, data);
+    const requestId = request.Data.RequestID;
+
+    return new Promise<Record<string, unknown>>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.pendingControlRequests.delete(requestId);
+        reject(new Error(`Timed out waiting for SDCP response to command ${cmd}.`));
+      }, CONTROL_REQUEST_TIMEOUT_MS);
+
+      this.pendingControlRequests.set(requestId, {
+        mainboardId: connection.printer.mainboard_id,
+        resolve,
+        reject,
+        timeout
+      });
+
+      try {
+        socket.send(JSON.stringify(request), (error) => {
+          if (!error) {
+            return;
+          }
+
+          const pending = this.pendingControlRequests.get(requestId);
+          if (!pending) {
+            return;
+          }
+
+          clearTimeout(pending.timeout);
+          this.pendingControlRequests.delete(requestId);
+          pending.reject(error);
+        });
+      } catch (error) {
+        clearTimeout(timeout);
+        this.pendingControlRequests.delete(requestId);
+        reject(error instanceof Error ? error : new Error("Unable to send SDCP control request."));
+      }
+    });
+  }
+
+  private buildControlRequest(mainboardId: string, cmd: number, data: Record<string, unknown>): SdcpRequestFrame {
+    return {
       Id: crypto.randomUUID().replace(/-/g, ""),
       Data: {
         Cmd: cmd,
-        Data: {},
+        Data: data,
         RequestID: crypto.randomUUID().replace(/-/g, ""),
         MainboardID: mainboardId,
         TimeStamp: Math.floor(Date.now() / 1000),
@@ -707,8 +846,6 @@ export class PrinterConnectionManager extends EventEmitter {
       },
       Topic: `sdcp/request/${mainboardId}`
     };
-
-    socket.send(JSON.stringify(request));
   }
 
   private async probePrinter(ipAddress: string): Promise<ManualPrinterProbeResult> {

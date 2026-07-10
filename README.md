@@ -42,7 +42,7 @@ Aktualnie po stronie repozytorium działają następujące elementy bazowe:
 - zapis wykrytych drukarek do SQLite przez UDP discovery SDCP,
 - connection manager WebSocket do drukarek z ujednoliconym `PrinterState`,
 - ręczne dodawanie i usuwanie drukarek przez REST API,
-- frontendowe widoki `/`, `/printers/:id` i `/settings` z live update przez WebSocket oraz historią wydruków w szczegółach drukarki,
+- frontendowe widoki `/`, `/printers/:id` i `/settings` z live update przez WebSocket, historią wydruków i podglądem kamery MJPEG w szczegółach drukarki,
 - zapis interwału discovery do tabeli `settings`,
 - trwały wolumen Dockera na plik bazy danych.
 

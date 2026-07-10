@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { fetchPrinterHistory } from "../api";
+import { fetchPrinterHistory, getPrinterCameraStreamUrl } from "../api";
 import { PrintHistoryRecord, PrinterSnapshot, PrinterState } from "../types";
 
 interface PrinterDetailPageProps {
@@ -51,6 +51,13 @@ export function PrinterDetailPage({ printer, loading }: PrinterDetailPageProps):
   const [history, setHistory] = useState<PrintHistoryRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [cameraLoaded, setCameraLoaded] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
+
+  useEffect(() => {
+    setCameraLoaded(false);
+    setCameraError(false);
+  }, [printer?.printer.id]);
 
   useEffect(() => {
     if (!printer) {
@@ -102,6 +109,7 @@ export function PrinterDetailPage({ printer, loading }: PrinterDetailPageProps):
 
   const { state } = printer;
   const isPrinting = state.activityStatus === "printing";
+  const hasCamera = state.capabilities.includes("VIDEO_STREAM");
   const elapsedTime = state.currentTicks === null ? null : formatDuration(state.currentTicks);
   const remainingTime =
     state.currentTicks === null || state.totalTicks === null
@@ -152,6 +160,35 @@ export function PrinterDetailPage({ printer, loading }: PrinterDetailPageProps):
           ))}
         </dl>
       </div>
+
+      {hasCamera ? (
+        <div className="rounded-3xl border border-white/10 bg-[var(--color-panel)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+          <p className="text-sm uppercase tracking-[0.24em] text-[var(--color-muted)]">Kamera</p>
+          <h3 className="mt-3 text-xl font-medium">Podgląd na żywo</h3>
+
+          <div className="relative mt-6 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/60">
+            {!cameraLoaded && !cameraError ? (
+              <div className="flex min-h-64 items-center justify-center p-6 text-sm text-[var(--color-muted)]">
+                Łączenie ze strumieniem kamery...
+              </div>
+            ) : null}
+
+            {cameraError ? (
+              <div className="flex min-h-64 items-center justify-center p-6 text-center text-sm text-rose-200">
+                Nie udało się załadować strumienia kamery. Sprawdź połączenie z drukarką i odśwież stronę.
+              </div>
+            ) : (
+              <img
+                alt={`Podgląd kamery drukarki ${state.displayName}`}
+                className={`w-full object-contain ${cameraLoaded ? "block" : "hidden"}`}
+                onError={() => setCameraError(true)}
+                onLoad={() => setCameraLoaded(true)}
+                src={getPrinterCameraStreamUrl(printer.printer.id)}
+              />
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {isPrinting ? (
         <div className="rounded-3xl border border-cyan-300/20 bg-[var(--color-panel)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">

@@ -3,6 +3,10 @@ import { FrontendSocketMessage, PrintHistoryRecord, PrinterSnapshot, SettingsPay
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8080`;
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss:" : "ws:";
 
+export function getPrinterCameraStreamUrl(printerId: number): string {
+  return `${API_BASE_URL}/api/printers/${printerId}/camera/stream`;
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
